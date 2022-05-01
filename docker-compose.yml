@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    volumes:
+      - ./wordpress:/var/www/html
+      - ./nginx/conf.d:/etc/nginx/conf.d/
+
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+
+    ports:
+      - "80:80"
+      - "443:443"
+    tty:  true
+    restart: unless-stopped
+    container_name: nginx
+    depends_on:
+      - wordpress
+    networks:
+      - app-network
+
+  wordpress:
+    image: wordpress:beta-php8.1-fpm-alpine
+    tty:  true
+    restart: unless-stopped
+    volumes:
+      - ./wordpress:/var/www/html
+    container_name: wordpress
+    depends_on:
+      - mariadb
+    networks:
+      - app-network
+
+  mysql:
+    image: yobasystems/alpine-mariadb:latest
+    tty:  true
+    restart: always
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/logs:/var/lib/mysql/mysql-bin
+    environment:
+      MYSQL_ROOT_PASSWORD: hguyFtgfR4r9R4r76
+      MYSQL_DATABASE: wordpressdb
+      MYSQL_USER: wordpressuser
+      MYSQL_PASSWORD: hguyFt6S95dgfR4ryb
+    container_name: mariadb
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+    certbot:
+      image: stephenneal/nginx-certbot:1.21-alpine-v2
+      depends_on:
+        - nginx
+      container_name: certbot
+      volumes:
+        - ./letsencrypt:/etc/letsencrypt
+        - ./wordpress:/var/www/html
+      command: certonly --webroot --webroot-path=/var/www/html --email your-email@mail.ru --agree-tos --no-eff-email -d website-name.ru
+
+networks:
+  app-network:
+    driver: bridge
