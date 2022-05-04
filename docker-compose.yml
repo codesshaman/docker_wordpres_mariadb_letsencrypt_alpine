@@ -6,13 +6,12 @@ services:
     volumes:
       - ./wordpress:/var/www/html
       - ./nginx/conf.d:/etc/nginx/conf.d/
-
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     ports:
       - "80:80"
       - "443:443"
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     tty:  true
     restart: unless-stopped
     container_name: nginx
@@ -53,15 +52,13 @@ services:
     networks:
       - app-network
 
-    certbot:
-      image: stephenneal/nginx-certbot:1.21-alpine-v2
-      depends_on:
-        - nginx
-      container_name: certbot
-      volumes:
-        - ./letsencrypt:/etc/letsencrypt
-        - ./wordpress:/var/www/html
-      command: certonly --webroot --webroot-path=/var/www/html --email your-email@mail.ru --agree-tos --no-eff-email -d website-name.ru
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 networks:
   app-network:
