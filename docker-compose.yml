@@ -28,7 +28,7 @@ services:
       - ./wordpress:/var/www/html
     container_name: wordpress
     depends_on:
-      - mariadb
+      - mysql
     networks:
       - app-network
 
@@ -44,7 +44,7 @@ services:
       MYSQL_DATABASE: wordpressdb
       MYSQL_USER: wordpressuser
       MYSQL_PASSWORD: hguyFt6S95dgfR4ryb
-    container_name: mariadb
+    container_name: mysql
     expose:
       - "3306"
     ports:
